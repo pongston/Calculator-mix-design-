@@ -370,34 +370,60 @@ function showStatus(msg, fade){
   }
 }
 
-async function saveState(){
-  try{
-    if(!window.storage){ return; }
-    const payload = JSON.stringify({group: currentGroup, rows: rows});
-    const res = await window.storage.set(STORAGE_KEY, payload, false);
-    if(res){ showStatus('บันทึกแล้ว ✓', true); }
-    else{ showStatus('บันทึกไม่สำเร็จ', true); }
-  }catch(err){
+async function saveState() {
+
+  try {
+
+    const payload = {
+
+      group: currentGroup,
+
+      rows: rows
+
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+    showStatus('บันทึกแล้ว ✓', true);
+
+    return true;
+
+  } catch (err) {
+
+    console.error(err);
+
     showStatus('บันทึกไม่สำเร็จ', true);
+
+    return false;
+
   }
+
 }
 
-async function loadState(){
-  try{
-    if(!window.storage){ return false; }
-    const res = await window.storage.get(STORAGE_KEY, false);
-    if(res && res.value){
-      const data = JSON.parse(res.value);
-      if(data && Array.isArray(data.rows) && data.rows.length){
-        rows = data.rows;
-        currentGroup = data.group && PCT.hasOwnProperty(data.group) ? data.group : 'A';
-        return true;
-      }
-    }
-  }catch(err){
-    // no saved state yet, or read failed — fall back to defaults
+async function loadState() {
+
+  try {
+
+    const data = localStorage.getItem(STORAGE_KEY);
+
+    if (!data) return false;
+
+    const obj = JSON.parse(data);
+
+    if (obj.rows) rows = obj.rows;
+
+    if (obj.group) currentGroup = obj.group;
+
+    return true;
+
+  } catch (err) {
+
+    console.error(err);
+
+    return false;
+
   }
-  return false;
+
 }
 
 function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
@@ -541,15 +567,28 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   }
 });
 
-(async function init(){
-  showStatus('กำลังโหลดข้อมูล…', false);
-  const loaded = await loadState();
-  document.querySelectorAll('#groupSeg button').forEach(b=>{
-    b.classList.toggle('active', b.dataset.g === currentGroup);
-  });
-  pctShow.textContent = (PCT[currentGroup]*100)+'%';
-  renderRows();
-  showStatus(loaded ? 'โหลดข้อมูลที่บันทึกไว้แล้ว ✓' : '', true);
+(function init(){
+
+    const loaded = loadState();
+
+    document.querySelectorAll('#groupSeg button').forEach(b=>{
+
+        b.classList.toggle('active', b.dataset.g===currentGroup);
+
+    });
+
+    pctShow.textContent=(PCT[currentGroup]*100)+'%';
+
+    renderRows();
+
+    showStatus(
+
+        loaded ? 'โหลดข้อมูลที่บันทึกไว้แล้ว ✓' : '',
+
+        true
+
+    );
+
 })();
 </script>
 
